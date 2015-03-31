@@ -227,10 +227,17 @@ VA3C.jsonLoader.loadSceneFromJson = function (jsonToLoad) {
     VA3C.uiVariables.getLayers();
 
     //if there are saved layers, create a checkbox for each of them
-    if ((VA3C.attributes.layerList.length == 1 && VA3C.attributes.layerList[0].name!="Default") || VA3C.attributes.layerList.length>1){
+    if ((VA3C.attributes.layerList.length == 1 && VA3C.attributes.layerList[0].name != "Default") || VA3C.attributes.layerList.length > 1) {
         layerStrings = [];
         for (var i = 0; i < VA3C.attributes.layerList.length; i++) {
-            layerStrings.push(VA3C.attributes.layerList[i].name);
+            //for Grasshopper files, this will return the name of the layer
+            var lName = VA3C.attributes.layerList[i].name;
+            // for Revit files, this will be undefined. We need to grab the object itself
+            if (lName == null) {
+                lName = VA3C.attributes.layerList[i];
+            }
+            if (lName != "Cameras") layerStrings.push(lName);
+
         }
         //sort layers by name
         layerStrings.sort();
@@ -250,16 +257,28 @@ VA3C.jsonLoader.loadSceneFromJson = function (jsonToLoad) {
             //add a checkbox per layer
             layerFolder.add(layer, layerStrings[i]).onChange(function (e) {
 
-            // get the name of the controller that fired the event -- there must be a different way of doing this...
-            var layerName = this.domElement.parentElement.firstChild.innerText;
+                // get the name of the controller that fired the event -- there must be a different way of doing this...
+                var layerName = this.domElement.parentElement.firstChild.innerText;
 
-            for (var i = 0; i < VA3C.attributes.elementList.length; i++) {
-                var element = VA3C.attributes.elementList[i];
-                if (element.userData.layer == layerName) {
-                     //if unchecked, make it invisible
-                     if (element.visible == true) element.visible = false;
-                     //otherwise, show it
-                     else element.visible = true;
+                for (var i = 0; i < VA3C.attributes.elementList.length; i++) {
+                    var element = VA3C.attributes.elementList[i];
+                    
+                    var changeVisibility = false;
+                    // if it is a project created in Revit, we need to get the parent of the element, the 3D object to get the user data recorded
+                    if (VA3C.scene.name.indexOf("BIM") != -1) {
+                        var parent = element.parent;
+                        if (parent.userData.layer == layerName) changeVisibility = true;
+                    }
+                        //for GH objects
+                    else{
+                        if (element.userData.layer == layerName) changeVisibility = true;
+                    }
+
+                    if (changeVisibility) {
+                        //if unchecked, make it invisible
+                        if (element.visible == true) element.visible = false;
+                            //otherwise, show it
+                        else element.visible = true;
                     }
                 }
             });
@@ -604,8 +623,7 @@ VA3C.UiConstructor = function () {
 
         $(document).keyup(function (e) {
             //if the escape key  is pressed
-            if (e.keyCode == 27)
-            {
+            if (e.keyCode == 27) {
                 $("#OpenLocalFile").css("visibility", "hidden");
                 $(".blackout").hide();
             }
@@ -637,7 +655,7 @@ VA3C.UiConstructor = function () {
     this.layers = "layers";
 
     //VIEW AND SELECTION VARIABLES
-    
+
     //zoom extents
     this.zoomExtents = function () {
         //loop over the children of the THREE scene, merge them into a mesh,
@@ -711,7 +729,7 @@ VA3C.UiConstructor = function () {
         if (view) {
             //get the eyePos from the current camera
             //change vector from Revit  (-x,z,y)
-            if (view.name !="DefaultView") {
+            if (view.name != "DefaultView") {
                 var eyePos = new THREE.Vector3(-view.eye.X, view.eye.Z, view.eye.Y);
 
                 //get the targetPos from the current camera
@@ -728,7 +746,7 @@ VA3C.UiConstructor = function () {
                 VA3C.orbitControls.target.set(0, 100, 0);
 
                 this.zoomExtents();
-               
+
             }
         }
     };
@@ -774,11 +792,22 @@ VA3C.UiConstructor = function () {
     };
 
     this.getLayers = function () {
+
         try {
             if (VA3C.scene.userData.layers.length > 0) {
-                for (var k = 0, kLen = VA3C.scene.userData.layers.length; k < kLen; k++) {
-                    var itemLayer = VA3C.scene.userData.layers[k];
-                    VA3C.attributes.layerList.push(itemLayer);
+                //if the project was exported from Revit
+                if (VA3C.scene.name.indexOf("BIM") != -1) {
+
+                    var lay = VA3C.scene.userData.layers.split(',');
+                    VA3C.attributes.layerList = lay;
+
+                }
+                    //for Grasshopper files
+                else {
+                    for (var k = 0, kLen = VA3C.scene.userData.layers.length; k < kLen; k++) {
+                        var itemLayer = VA3C.scene.userData.layers[k];
+                        VA3C.attributes.layerList.push(itemLayer);
+                    }
                 }
             }
         }
@@ -1087,7 +1116,7 @@ VA3C.attributes.populateAttributeList = function (jsonData) {
 VA3C.attributes.purge = function () {
     this.restorePreviouslySelectedObject();
     this.elementList = [];
-    if(this.viewList.length>0) this.viewList = [];
+    if (this.viewList.length > 0) this.viewList = [];
     if (this.layerList.length > 0) this.layerList = [];
 };
 
@@ -1112,7 +1141,7 @@ VA3C.folderPurge = function () {
 
         //remove the Layers folder -- this is not working
         VA3C.datGui.removeFolder('Layers');
-        
+
     }
 
     catch (err) { }
