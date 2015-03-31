@@ -262,7 +262,7 @@ VA3C.jsonLoader.loadSceneFromJson = function (jsonToLoad) {
 
                 for (var i = 0; i < VA3C.attributes.elementList.length; i++) {
                     var element = VA3C.attributes.elementList[i];
-                    
+
                     var changeVisibility = false;
                     // if it is a project created in Revit, we need to get the parent of the element, the 3D object to get the user data recorded
                     if (VA3C.scene.name.indexOf("BIM") != -1) {
@@ -270,7 +270,7 @@ VA3C.jsonLoader.loadSceneFromJson = function (jsonToLoad) {
                         if (parent.userData.layer == layerName) changeVisibility = true;
                     }
                         //for GH objects
-                    else{
+                    else {
                         if (element.userData.layer == layerName) changeVisibility = true;
                     }
 
@@ -927,49 +927,63 @@ VA3C.attributes.checkIfSelected = function (event) {
     if (intersects.length > 0) {
 
         //get the closest intesected object
-        var myIntersect = intersects[0].object;
+        //var myIntersect = intersects[0].object;
 
-        //was this element already selected?  if so, do nothing.
-        if (myIntersect.id === VA3C.attributes.previousClickedElement.id) return;
+        var myIntersect;
+        var i = 0;
 
-        //was another element already selected?
-        if (VA3C.attributes.previousClickedElement.id !== -1) {
-            //restore previously selected object's state
-            VA3C.attributes.restorePreviouslySelectedObject();
+        while (i < intersects.length) {
+            myIntersect = intersects[i].object;
+            i++;
+            //get the first object that is visible
+            if (myIntersect.visible == true) break;
         }
 
-
-        //var to track whether the intersect is an object3d or a mesh
-        var isObject3D = false;
-
-        //did we intersect a mesh that belongs to an Object3D or a Geometry?  The former comes from Revit, the latter from GH
-        if (myIntersect.parent.type === "Object3D") {
-            isObject3D = true;
-        }
+        if (myIntersect.visible == true) {
 
 
-        //store the selected object
-        VA3C.attributes.storeSelectedObject(myIntersect, isObject3D);
+            //was this element already selected?  if so, do nothing.
+            if (myIntersect.id === VA3C.attributes.previousClickedElement.id) return;
 
-        //paint the selected object[s] with the application's 'selected' material
-        if (isObject3D) {
-            //loop over the children and paint each one
-            for (var i = 0; i < myIntersect.parent.children.length; i++) {
-                VA3C.attributes.paintElement(myIntersect.parent.children[i], VA3C.attributes.clickedMaterial);
+            //was another element already selected?
+            if (VA3C.attributes.previousClickedElement.id !== -1) {
+                //restore previously selected object's state
+                VA3C.attributes.restorePreviouslySelectedObject();
             }
-        }
-        else {
-            //paint the mesh with the clicked material
-            VA3C.attributes.paintElement(myIntersect, VA3C.attributes.clickedMaterial);
-        }
 
 
-        //populate the attribute list with the object's user data
-        if (isObject3D) {
-            VA3C.attributes.populateAttributeList(myIntersect.parent.userData);
-        }
-        else {
-            VA3C.attributes.populateAttributeList(myIntersect.userData);
+            //var to track whether the intersect is an object3d or a mesh
+            var isObject3D = false;
+
+            //did we intersect a mesh that belongs to an Object3D or a Geometry?  The former comes from Revit, the latter from GH
+            if (myIntersect.parent.type === "Object3D") {
+                isObject3D = true;
+            }
+
+
+            //store the selected object
+            VA3C.attributes.storeSelectedObject(myIntersect, isObject3D);
+
+            //paint the selected object[s] with the application's 'selected' material
+            if (isObject3D) {
+                //loop over the children and paint each one
+                for (var i = 0; i < myIntersect.parent.children.length; i++) {
+                    VA3C.attributes.paintElement(myIntersect.parent.children[i], VA3C.attributes.clickedMaterial);
+                }
+            }
+            else {
+                //paint the mesh with the clicked material
+                VA3C.attributes.paintElement(myIntersect, VA3C.attributes.clickedMaterial);
+            }
+
+
+            //populate the attribute list with the object's user data
+            if (isObject3D) {
+                VA3C.attributes.populateAttributeList(myIntersect.parent.userData);
+            }
+            else {
+                VA3C.attributes.populateAttributeList(myIntersect.userData);
+            }
         }
     }
 
