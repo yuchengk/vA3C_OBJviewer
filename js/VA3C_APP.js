@@ -216,12 +216,13 @@ VA3C.jsonLoader.loadSceneFromJson = function (jsonToLoad) {
         f.add(VA3C.uiVariables, 'view', viewStrings).onFinishChange(function (e) {
             VA3C.uiVariables.resetView();
         });
-        VA3C.uiVariables.resetView();
     }
 
-    else {
-        VA3C.uiVariables.zoomExtents();
-    }
+    VA3C.uiVariables.zoomExtents();
+
+    // get the default view properties from the zoom extents orbitControl properties
+    VA3C.uiVariables.storeDefaultView();
+
 
     //get the views saved in the JSON file
     VA3C.uiVariables.getLayers();
@@ -684,22 +685,60 @@ VA3C.UiConstructor = function () {
         dir.multiplyScalar(offset * 1.25);
         newPos.addVectors(c, dir);
         VA3C.orbitControls.object.position.set(newPos.x, newPos.y, newPos.z);
-        VA3C.orbitControls.target = new THREE.Vector3(geo.boundingSphere.center.x, geo.boundingSphere.center.y, geo.boundingSphere.center.z);
+        VA3C.orbitControls.target = new THREE.Vector3(c.x, c.y, c.z);
+
+
+
+    };
+
+    this.defView = {};
+
+    this.storeDefaultView = function () {
+        //create a default view
+
+        this.defView.eye = {};
+        this.defView.target = {};
+        this.defView.eye.X = -VA3C.orbitControls.object.position.x;
+        this.defView.eye.Y = VA3C.orbitControls.object.position.z;
+        this.defView.eye.Z = VA3C.orbitControls.object.position.y;
+        this.defView.target.X = -VA3C.orbitControls.target.x;
+        this.defView.target.Y = VA3C.orbitControls.target.z;
+        this.defView.target.Z = VA3C.orbitControls.target.y;
     };
 
     this.getViews = function () {
         try {
             if (VA3C.scene.userData.views.length > 0) {
-                //create a default view
-                var defView = {}
-                defView.name = "DefaultView";
-                //defView.eye =new THREE.Vector3(-1000, 1000, 1000);
-                //defView.target = new THREE.Vector3(0, -100, 0);
-                VA3C.attributes.viewList.push(defView);
+
+                this.defView.name = "DefaultView";
+                VA3C.attributes.viewList.push(this.defView);
+
                 //add the views in the json file
-                for (var k = 0, kLen = VA3C.scene.userData.views.length; k < kLen; k++) {
-                    var itemView = VA3C.scene.userData.views[k];
-                    VA3C.attributes.viewList.push(itemView);
+                //if the project was exported from Revit, there is only one view
+                if (VA3C.scene.name.indexOf("BIM") != -1) {
+
+                    var v = VA3C.scene.userData.views.split(",");
+                    var revitView = {}
+                    revitView.name = "RevitView";
+                    revitView.eye = {};
+                    revitView.eye.X = v[0] * 1000;
+                    revitView.eye.Y = v[1] * 1000;
+                    revitView.eye.Z = v[2] * 1000;
+                    revitView.target = {};
+                    revitView.target.X = v[3];
+                    revitView.target.Y = v[4];
+                    revitView.target.Z = v[5];
+
+                    VA3C.attributes.viewList.push(revitView);
+
+                }
+                    //for Grasshopper files
+                else {
+
+                    for (var k = 0, kLen = VA3C.scene.userData.views.length; k < kLen; k++) {
+                        var itemView = VA3C.scene.userData.views[k];
+                        VA3C.attributes.viewList.push(itemView);
+                    }
                 }
             }
         }
@@ -728,26 +767,26 @@ VA3C.UiConstructor = function () {
 
         if (view) {
             //get the eyePos from the current camera
-            //change vector from Revit  (-x,z,y)
-            if (view.name != "DefaultView") {
-                var eyePos = new THREE.Vector3(-view.eye.X, view.eye.Z, view.eye.Y);
+            //change vector from Revit and GH  (-x,z,y)
+            //if (view.name != "DefaultView") {
 
-                //get the targetPos from the current camera
-                //change direction of vector from revit (-x,-z,-y)
-                var dir = new THREE.Vector3(-view.target.X, -view.target.Z, -view.target.Y);
+            var eyePos = new THREE.Vector3(-view.eye.X, view.eye.Z, view.eye.Y);
 
-                VA3C.orbitControls.target.set(dir.x, dir.y, dir.z);
-                VA3C.orbitControls.object.position.set(eyePos.x, eyePos.y, eyePos.z);
-            }
+            //get the targetPos from the current camera
+            var dir = new THREE.Vector3(-view.target.X, -view.target.Z, -view.target.Y);
 
-            else {
-                VA3C.camera.position.set(1000, 1000, 1000);
-                VA3C.orbitControls = new THREE.OrbitControls(VA3C.camera, VA3C.renderer.domElement);
-                VA3C.orbitControls.target.set(0, 100, 0);
+            //var up = new THREE.Vector3(0, 0, 1);
+            ////up = up.applyQuaternion(VA3C.orbitControls.object.quaternion);
+            //eyePos.addVectors(eyePos, up);
 
-                this.zoomExtents();
+            VA3C.orbitControls.object.position.set(eyePos.x, eyePos.y, eyePos.z);
+            VA3C.orbitControls.target.set(dir.x, dir.y, dir.z);
+            //}
 
-            }
+            //else {
+            //    this.zoomExtents();
+
+            //}
         }
     };
 
