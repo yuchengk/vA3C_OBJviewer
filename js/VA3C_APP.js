@@ -508,6 +508,49 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
 
     };
 
+    //function to open an obj mtl combo
+    VA3C.jsonLoader.openObjMtl = function( objPath, mtlPath ){
+
+        //initialize our three.js scene
+        VA3C.scene = new THREE.Scene();
+
+        //new objmtl loader object
+        var loader = new THREE.OBJMTLLoader();
+
+        //try to load the pair
+        loader.load(objPath, mtlPath, function(loadedObj){
+
+            //we need to mirror the objects coming in around the X axis and the Z
+            var mat = (new THREE.Matrix4()).identity();
+            mat.elements[0] = -1;
+            mat.elements[10] = -1;
+
+            //process the loaded geometry - make sure faces are 2 sided, merge vertices and compute, etc
+            for(var i=0; i<loadedObj.children.length; i++){
+                if(loadedObj.children[i] instanceof THREE.Mesh){
+                    loadedObj.children[i].geometry.mergeVertices();
+                    loadedObj.children[i].geometry.computeFaceNormals();
+                    loadedObj.children[i].geometry.computeVertexNormals();
+                    loadedObj.children[i].geometry.applyMatrix(mat);
+                    loadedObj.children[i].material.side = 2;
+                }
+            }
+
+
+            VA3C.scene.add(loadedObj);
+
+            VA3C.jsonLoader.computeBoundingSphere();
+            //set up the lighting rig
+            VA3C.lightingRig.createLights();
+            //call zoom extents
+            VA3C.zoomExtents();
+
+            //hide the blackout
+            $(".blackout").hide();
+            $(".loading").hide();
+        });
+    };
+
     //call this function to set a geometry's face material index to the same index as the face number
     //this lets meshfacematerials work - the json loader only gets us part of the way there (I think we are missing something when we create mesh faces...)
     VA3C.jsonLoader.makeFaceMaterialsWork = function () {
@@ -684,14 +727,14 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
         var pointA = new THREE.PointLight(0x666666, 1, 0);
         pointA.position.set(center.x, center.y + offset, center.z);
         pointA.castShadow = false;
-        VA3C.scene.add(pointA);
+        //VA3C.scene.add(pointA);
         VA3C.lightingRig.pointLights.push(pointA);
 
         //directly below
         var pointB = new THREE.PointLight(0x666666, 0.66, 0);
         pointB.position.set(center.x, center.y - offset, center.z);
         pointB.castShadow = false;
-        VA3C.scene.add(pointB);
+        //VA3C.scene.add(pointB);
         VA3C.lightingRig.pointLights.push(pointB);
 
 
@@ -699,25 +742,25 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
         var pointC = new THREE.PointLight(0x666666, 0.33, 0);
         pointC.position.set(center.x + offset, center.y, center.z);
         pointC.castShadow = false;
-        VA3C.scene.add(pointC);
+        //VA3C.scene.add(pointC);
         VA3C.lightingRig.pointLights.push(pointC);
 
         var pointD = new THREE.PointLight(0x666666, 0.33, 0);
         pointD.position.set(center.x, center.y, center.z + offset);
         pointD.castShadow = false;
-        VA3C.scene.add(pointD);
+        //VA3C.scene.add(pointD);
         VA3C.lightingRig.pointLights.push(pointD);
 
         var pointE = new THREE.PointLight(0x666666, 0.33, 0);
         pointE.position.set(center.x - offset, center.y, center.z);
         pointE.castShadow = false;
-        VA3C.scene.add(pointE);
+        //VA3C.scene.add(pointE);
         VA3C.lightingRig.pointLights.push(pointE);
 
         var pointF = new THREE.PointLight(0x666666, 0.33, 0);
         pointF.position.set(center.x, center.y, center.z - offset);
         pointF.castShadow = false;
-        VA3C.scene.add(pointF);
+        //VA3C.scene.add(pointF);
         VA3C.lightingRig.pointLights.push(pointF);
 
 
@@ -743,7 +786,7 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
 
         //add the light to our scene and to our app object
         VA3C.lightingRig.sunLight = light;
-        VA3C.scene.add(light);
+        //VA3C.scene.add(light);
 
     };
 
