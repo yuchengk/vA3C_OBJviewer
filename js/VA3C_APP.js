@@ -523,37 +523,47 @@ var VA3C_CONSTRUCTOR = function (divToBind, OBJpath, MTLpath, callback) {
         var loader = new THREE.OBJMTLLoader();
 
         //try to load the pair
-        loader.load(objPath, mtlPath, function(loadedObj){
+        loader.load(objPath, mtlPath,
+                function(loadedObj){
 
-            //we need to mirror the objects coming in around the X axis and the Z
-            var mat = (new THREE.Matrix4()).identity();
-            mat.elements[0] = -1;
-            mat.elements[10] = -1;
+                //we need to mirror the objects coming in around the X axis and the Z
+                var mat = (new THREE.Matrix4()).identity();
+                mat.elements[0] = -1;
+                mat.elements[10] = -1;
 
-            //process the loaded geometry - make sure faces are 2 sided, merge vertices and compute, etc
-            for(var i=0; i<loadedObj.children.length; i++){
-                if(loadedObj.children[i] instanceof THREE.Mesh){
-                    loadedObj.children[i].geometry.mergeVertices();
-                    loadedObj.children[i].geometry.computeFaceNormals();
-                    loadedObj.children[i].geometry.computeVertexNormals();
-                    loadedObj.children[i].geometry.applyMatrix(mat);
-                    loadedObj.children[i].material.side = 2;
+                //process the loaded geometry - make sure faces are 2 sided, merge vertices and compute, etc
+                for(var i=0; i<loadedObj.children.length; i++){
+                    if(loadedObj.children[i] instanceof THREE.Mesh){
+                        loadedObj.children[i].geometry.mergeVertices();
+                        loadedObj.children[i].geometry.computeFaceNormals();
+                        loadedObj.children[i].geometry.computeVertexNormals();
+                        loadedObj.children[i].geometry.applyMatrix(mat);
+                        loadedObj.children[i].material.side = 2;
+                    }
                 }
+
+
+                VA3C.scene.add(loadedObj);
+
+                //VA3C.jsonLoader.computeBoundingSphere();
+                //set up the lighting rig
+                VA3C.lightingRig.createLights();
+                //call zoom extents
+                VA3C.zoomExtents();
+
+                //hide the blackout
+                $(".vA3C_blackout").hide();
+                $(".vA3C_loading").hide();
+            },
+            // Function called when downloads progress
+            function ( xhr ) {
+                //console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+            },
+            // Function called when downloads error
+            function ( er ) {
+                //console.log( 'An error happened' );
             }
-
-
-            VA3C.scene.add(loadedObj);
-
-            VA3C.jsonLoader.computeBoundingSphere();
-            //set up the lighting rig
-            VA3C.lightingRig.createLights();
-            //call zoom extents
-            VA3C.zoomExtents();
-
-            //hide the blackout
-            $(".vA3C_blackout").hide();
-            $(".vA3C_loading").hide();
-        });
+        );
     };
 
     //call this function to set a geometry's face material index to the same index as the face number
@@ -668,7 +678,7 @@ var VA3C_CONSTRUCTOR = function (divToBind, OBJpath, MTLpath, callback) {
     //zoom extents function.  we call this when we load a file (and from the UI), so it shouldn't be in the UI constructor
     VA3C.zoomExtents = function () {
 
-        if (VA3C.boundingSphere === undefined) VA3C.computeBoundingSphere();
+        if (VA3C.boundingSphere === undefined) VA3C.jsonLoader.computeBoundingSphere();
 
         //get the radius of the sphere and use it to compute an offset.  This is a mashup of theo's method
         //and the one we use in platypus
@@ -719,7 +729,7 @@ var VA3C_CONSTRUCTOR = function (divToBind, OBJpath, MTLpath, callback) {
         VA3C.scene.add(VA3C.lightingRig.ambientLight);
 
 
-        //using the bounding sphere calculated above, get a numeric value to position the lights away from the center
+        /*//using the bounding sphere calculated above, get a numeric value to position the lights away from the center
         var offset = VA3C.boundingSphere.radius * 2;
 
         //get the center of the bounding sphere.  we'll use this to center the rig
@@ -791,7 +801,7 @@ var VA3C_CONSTRUCTOR = function (divToBind, OBJpath, MTLpath, callback) {
 
         //add the light to our scene and to our app object
         VA3C.lightingRig.sunLight = light;
-        //VA3C.scene.add(light);
+        //VA3C.scene.add(light);*/
 
     };
 
