@@ -3,25 +3,17 @@
  */
 
 //contains the jquery document.ready callback, which starts the application
-var myVA3C;
+var myVA3C = {};
 
 $(document).ready(function(){
 
-    //load our sample JSON file from disk
-    $.getJSON("./js/va3c.json", function( data ){
+    //once the whole page is loaded, initialize a VA3C viewer by passing in the div to bind to, links to the OBJ and MTL files,
+    // and a callback function where we can enable application functionality in nice clean chunks
+    myVA3C = new VA3C_CONSTRUCTOR($("#vA3C_output"),'assets/Lion-exported.obj', 'assets/Lion-exported.mtl', function(app){
 
-        //once loaded, initialize a VA3C viewer by passing in the div to bind to, the json data, and a callback function
-        //where we can enable application functionality in nice clean chunks
-        myVA3C = new VA3C_CONSTRUCTOR($("#vA3C_output"), data, function(app){
+        //call the UI / functionality modules
+        app.userInterface();
+        app.sceneUI();
 
-            //call the UI / functionality modules
-            app.userInterface();
-            app.openLocalFiles();
-            app.sceneUI();
-            app.lightingUI();
-            app.viewAndSelectionUI();
-            app.viewsUI();
-            app.layersUI();
-        });
     });
 });

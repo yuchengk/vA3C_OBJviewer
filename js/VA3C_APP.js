@@ -4,7 +4,7 @@
  */
 
 //base application object containing vA3C functions and properties
-var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
+var VA3C_CONSTRUCTOR = function (divToBind, OBJpath, MTLpath, callback) {
 
     var VA3C = this;        //a local app object we can work with inside of the constructor to avoid 'this' confusion.
     VA3C.viewerDiv = divToBind;  //a reference to the div for use throughout the app
@@ -55,7 +55,7 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
 
 
         //append the loading div and let it respond to the parent div resizing
-        VA3C.viewerDiv.append("<div class='vA3C_loading'><h1>Loading vA3C JSON file...</h1></div>");
+        VA3C.viewerDiv.append("<div class='vA3C_loading'><h1>Loading OBJ file...</h1></div>");
         //function to position the loading div
         var setLoading = function () {
 
@@ -64,8 +64,8 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
 
             //get upper left coordinates of the viewer div - we'll use these for positioning
             var win = $(window);
-            var x = (VA3C.viewerDiv.offset().left - win.scrollLeft()) / 2;
-            var y = (VA3C.viewerDiv.offset().top - win.scrollTop()) / 2;
+            var x = ((VA3C.viewerDiv.offset().left + VA3C.viewerDiv.outerWidth()) - win.scrollLeft()) / 2;
+            var y = ((VA3C.viewerDiv.offset().top + VA3C.viewerDiv.outerHeight()) - win.scrollTop()) / 2;
 
             //set the position and size
             targetDiv.css('left', x.toString() + "px");
@@ -248,10 +248,11 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
             //set background color
             VA3C.renderer.setClearColor(e);
         });
-        //scene fog
-        //sceneFolder.add(VA3C.uiVariables, 'fog').onChange(function(e){
-        //        VA3C.lightingRig.setFog(e);
-        //    });
+
+        //ambient light color
+        sceneFolder.addColor(VA3C.uiVariables, 'ambientLightColor').onChange(function (e) {
+            VA3C.lightingRig.setAmbientLightColor(e);
+        });
 
         //append a new div to the parent to use for stats visualization
         VA3C.viewerDiv.append("<div id='vA3C_stats' style= 'position: fixed;'></div>");
@@ -511,6 +512,10 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
     //function to open an obj mtl combo
     VA3C.jsonLoader.openObjMtl = function( objPath, mtlPath ){
 
+        //hide the blackout
+        $(".vA3C_blackout").show();
+        $(".vA3C_loading").show();
+
         //initialize our three.js scene
         VA3C.scene = new THREE.Scene();
 
@@ -546,8 +551,8 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
             VA3C.zoomExtents();
 
             //hide the blackout
-            $(".blackout").hide();
-            $(".loading").hide();
+            $(".vA3C_blackout").hide();
+            $(".vA3C_loading").hide();
         });
     };
 
@@ -710,7 +715,7 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
     VA3C.lightingRig.createLights = function () {
 
         // create ambient light
-        VA3C.lightingRig.ambientLight = new THREE.AmbientLight(0x696969);
+        VA3C.lightingRig.ambientLight = new THREE.AmbientLight(0xFFFFFF);
         VA3C.scene.add(VA3C.lightingRig.ambientLight);
 
 
@@ -913,7 +918,7 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
         this.backgroundColor = "#000000";
 
         //ambient light color
-        this.ambientLightColor = '#666666';
+        this.ambientLightColor = "#FFFFFF";
 
         //fog
         this.fog = true;
@@ -1616,8 +1621,8 @@ var VA3C_CONSTRUCTOR = function (divToBind, jsonFileData, callback) {
     VA3C.initViewer(VA3C.viewerDiv);
 
     //if the user passed in a json file, load it.
-    if (jsonFileData !== undefined) {
-        VA3C.jsonLoader.loadSceneFromJson(jsonFileData);
+    if (OBJpath !== undefined && MTLpath !== undefined) {
+        VA3C.jsonLoader.openObjMtl(OBJpath, MTLpath);
     }
 
     //if the user supplied a callback function, call it and pass our application object (this)
