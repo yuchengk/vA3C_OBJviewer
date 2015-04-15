@@ -534,9 +534,9 @@ var VA3C_CONSTRUCTOR = function (divToBind, OBJpath, MTLpath, callback) {
                 //process the loaded geometry - make sure faces are 2 sided, merge vertices and compute, etc
                 for(var i=0; i<loadedObj.children.length; i++){
                     if(loadedObj.children[i] instanceof THREE.Mesh){
-                        loadedObj.children[i].geometry.mergeVertices();
-                        loadedObj.children[i].geometry.computeFaceNormals();
-                        loadedObj.children[i].geometry.computeVertexNormals();
+                        //loadedObj.children[i].geometry.mergeVertices();
+                        //loadedObj.children[i].geometry.computeFaceNormals();
+                        //loadedObj.children[i].geometry.computeVertexNormals();
                         loadedObj.children[i].geometry.applyMatrix(mat);
                         loadedObj.children[i].material.side = 2;
                     }
@@ -555,10 +555,12 @@ var VA3C_CONSTRUCTOR = function (divToBind, OBJpath, MTLpath, callback) {
                 $(".vA3C_blackout").hide();
                 $(".vA3C_loading").hide();
             },
+
             // Function called when downloads progress
             function ( xhr ) {
                 //console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
             },
+
             // Function called when downloads error
             function ( er ) {
                 //console.log( 'An error happened' );
